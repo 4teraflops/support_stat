@@ -16,6 +16,7 @@ import time
 import requests
 import json
 
+
 stat = []
 """Не работает, если будешь собирать стату за последний день месяца"""
 

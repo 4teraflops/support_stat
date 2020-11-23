@@ -172,19 +172,20 @@ def get_answered_unanswered():
         "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:80.0) Gecko/20100101 Firefox/80.0"
     }
     yesterday = datetime.strftime((datetime.now() - timedelta(days=1)), "%Y-%m-%d")
-    weekday = datetime.isoweekday((datetime.now() - timedelta(days=2)))
+    weekday = datetime.isoweekday((datetime.now() - timedelta(days=1)))
+    logger.info(f'weekday: {weekday}')
     if weekday == 5:  # По пятнцицам смотреть звонки до 17 часов
         endtime = "16:59:59"
     else:  # В остальные дни смотреть до 18
         endtime = "17:59:59"
 
-    #logger.info(f'rnd time: {endtime}')
     payload = {
         "start": f"{yesterday} 09:00:00",
         "end": f"{yesterday} {endtime}",
         "List_Queue[]": ["'100'", "'200'"],
         "List_Agent[]": ["'125-Cvecih'", "'154-Yakovlev'", "'140-Voronina'", "'137-Zmeev'", "'148-Nazarov'", "'155-Kulakov'", "'147-Besonogov'", "'147-Besogonov'", "'156-Solcina'"]
     }
+    logger.info(f'endtime: {payload["end"]}')
     ans_request = s.post(answered_url, data=payload, headers=headers)
     ans_soup = BeautifulSoup(ans_request.text, 'lxml')  # Передаем в суп полученную страницу
     # находим нужный тег, отсекая лишние символы
@@ -255,7 +256,7 @@ def record_data():
         #worksheet.update_cell((cell.row + 15), cell.col, stat['calls']['answered'])
         # Количество пропущенных звонков
         #worksheet.update_cell((cell.row + 16), cell.col, stat['calls']['unanswered'])
-        logger.error("It's day off. Ignore calls info.")
+        logger.info("It's day off. Ignore calls info.")
     else:
         try:
             worksheet.update_cell((cell.row + 1), cell.col, stat['yt'][0])

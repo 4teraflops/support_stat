@@ -1,5 +1,13 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 
 
-yesterday = datetime.strftime((datetime.now() - timedelta(days=1)), "%Y-%m-%d")
-print(datetime.isoweekday((datetime.now() - timedelta(days=2))))
+def fr():
+
+    now = datetime.now()
+    print(now.time())
+    print(time(17, 0))
+    print(now.time() < time(17, 0))
+    if now.time() <= time(17, 0):
+        print(now.time() <= time(17, 0))
+
+fr()

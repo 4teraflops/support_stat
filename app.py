@@ -3,7 +3,8 @@ from youtrack.connection import Connection as YouTrack
 from youtrack import YouTrackException
 import gspread
 from bs4 import BeautifulSoup
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
+import time as t  # Это чтоб можно было делать time.sleep()
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.keys import Keys
@@ -13,7 +14,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 import os
 from config import email, passwd
-import time
 import requests
 import json
 from loguru import logger
@@ -83,7 +83,7 @@ def c2d_stat():
     passwd_filed = wait.until(
         EC.element_to_be_clickable((By.XPATH, '/html/body/div[2]/div/div[1]/div/form/div[1]/input')))
     passwd_filed.send_keys(f'{passwd}')
-    time.sleep(1)
+    t.sleep(1)
     passwd_filed.send_keys(Keys.ENTER)
 
     #  Открываем отчет 1 для ТА
@@ -173,7 +173,7 @@ def get_answered_unanswered():
     }
     yesterday = datetime.strftime((datetime.now() - timedelta(days=1)), "%Y-%m-%d")
     weekday = datetime.isoweekday((datetime.now() - timedelta(days=1)))
-    logger.info(f'weekday: {weekday}')
+    #logger.info(f'weekday: {weekday}')
     if weekday == 5:  # По пятнцицам смотреть звонки до 17 часов
         endtime = "16:59:59"
     else:  # В остальные дни смотреть до 18
@@ -185,7 +185,7 @@ def get_answered_unanswered():
         "List_Queue[]": ["'100'", "'200'"],
         "List_Agent[]": ["'125-Cvecih'", "'154-Yakovlev'", "'140-Voronina'", "'137-Zmeev'", "'148-Nazarov'", "'155-Kulakov'", "'147-Besonogov'", "'147-Besogonov'", "'156-Solcina'"]
     }
-    logger.info(f'endtime: {payload["end"]}')
+    #logger.info(f'endtime: {payload["end"]}')
     ans_request = s.post(answered_url, data=payload, headers=headers)
     ans_soup = BeautifulSoup(ans_request.text, 'lxml')  # Передаем в суп полученную страницу
     # находим нужный тег, отсекая лишние символы
@@ -221,9 +221,9 @@ def record_data():
     weekday = datetime.isoweekday((datetime.now() - timedelta(days=2)))
     cell = worksheet.find(yesterday)
     if weekday in [6, 7]:  # Если вчера была суббота, либо воскресение, то данные по звонкам не заполнять
-        #  cell.row - строка cell.col - столбец. Заполняем данные
-        #  Создано support
         try:
+            #  cell.row - строка cell.col - столбец. Заполняем данные
+            #  Создано support
             worksheet.update_cell((cell.row + 1), cell.col, stat['yt'][0])
             #  Создано Customer Help Desk
             worksheet.update_cell((cell.row + 2), cell.col, stat['yt'][1])
@@ -242,16 +242,16 @@ def record_data():
             #  Осталось в задачнике на конец суток
             worksheet.update_cell((cell.row + 12), cell.col, stat['yt'][8])
         except IndexError:
-            logger.error("Can't record YT data")
+            logger.debug("Can't record YT data")
         try:
             #  Обработано диалогов в открытых линиях
             worksheet.update_cell((cell.row + 13), cell.col, stat['c2d']['appreal_sum'])
             #  Средняя оценка в чатах
-            worksheet.update_cell((cell.row + 14), cell.col, stat['c2d']['raiting_average'])
+            worksheet.update_cell((cell.row + 14), cell.col, stat['c2d']['raiting_average'].replace('.', ','))
             #  Среднее время реакции
             worksheet.update_cell((cell.row + 19), cell.col, stat['c2d']['reply_time_average'])
         except KeyError:
-            logger.error("Can't record c2d data")
+            logger.debug("Can't record c2d data")
         # Количество принятых звонков
         #worksheet.update_cell((cell.row + 15), cell.col, stat['calls']['answered'])
         # Количество пропущенных звонков
@@ -269,18 +269,18 @@ def record_data():
             worksheet.update_cell((cell.row + 9), cell.col, stat['yt'][7])
             worksheet.update_cell((cell.row + 12), cell.col, stat['yt'][8])
         except IndexError:
-            logger.error("Can't record YT data")
+            logger.debug("Can't record YT data")
         try:
             worksheet.update_cell((cell.row + 13), cell.col, stat['c2d']['appreal_sum'])
-            worksheet.update_cell((cell.row + 14), cell.col, stat['c2d']['raiting_average'])
+            worksheet.update_cell((cell.row + 14), cell.col, stat['c2d']['raiting_average'].replace('.', ','))
             worksheet.update_cell((cell.row + 19), cell.col, stat['c2d']['reply_time_average'])
         except KeyError:
-            logger.error("Can't record c2d data")
+            logger.debug("Can't record c2d data")
         try:
             worksheet.update_cell((cell.row + 15), cell.col, stat['calls']['answered'])
             worksheet.update_cell((cell.row + 16), cell.col, stat['calls']['unanswered'])
         except KeyError:
-            logger.error("Can't record calls data")
+            logger.debug("Can't record calls data")
 
 
 def tg_alarm(alarmtext):
@@ -291,10 +291,13 @@ def tg_alarm(alarmtext):
 
 @logger.catch()
 def main():
-    yt_stat()
-    c2d_stat()
-    get_answered_unanswered()
-    record_data()
+    if datetime.time(datetime.now()) <= time(17, 0):  # Если сейчас меньше 17 часов то данные из c2d не пишем
+        yt_stat()
+        get_answered_unanswered()
+        record_data()
+    else:  # Если вечер, то пишем только данные из чатов
+        c2d_stat()
+        record_data()
 
 
 if __name__ == '__main__':

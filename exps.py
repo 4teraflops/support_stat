@@ -10,4 +10,11 @@ def fr():
     if now.time() <= time(17, 0):
         print(now.time() <= time(17, 0))
 
-fr()
+day = '2020-12-28'
+
+iso_day = datetime.strptime(day, '%Y-%m-%d')
+
+format_day = datetime.strftime(iso_day, "%d.%m.%Y")
+weekday = datetime.isoweekday(datetime.now())
+
+print(format_day, weekday)

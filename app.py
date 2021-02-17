@@ -77,7 +77,7 @@ def c2d_stat():
 
     #  Логин
     driver.get(login_url)
-    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/header/div[1]/div[1]/a[1]'))).click()  # Нашел форму ввода логина
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[2]/div/div[1]/div/form/input'))).click()  # Нашел форму ввода логина
     login_field = wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[2]/div/div[1]/div/form/input')))
     login_field.send_keys(f'{email}')
     passwd_filed = wait.until(

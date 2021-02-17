@@ -23,27 +23,30 @@ stat = {'yt': [], 'c2d': {}, 'calls': {}}
 """Не работает, если будешь собирать стату за последний день месяца"""
 logger.add(f'log/{__name__}.log', format='{time} {level} {message}', level='DEBUG', rotation='10 MB', compression='zip')
 
+day = input('Введи дату(формат: YYYY-MM-DD): ')
+#day = '2020-12-28'
+#logger.debug('проект' + str(' : ') + '{!W Support yt@bisys.ru}' + f'создана: {day}')
+
 
 def yt_stat():
-
     yt = YouTrack('https://youtrack.bisys.ru', token=youtrack_api_token)
 
     try:
-        support_created_yesterday = yt.getNumberOfIssues(filter='проект: {!W Support yt@bisys.ru} создана: Вчера')
+        support_created_yesterday = yt.getNumberOfIssues(filter='проект: {!W Support yt@bisys.ru}' + f' создана: {day}')
         stat['yt'].append(support_created_yesterday)
-        customer_helpdesk_created_yesterday = yt.getNumberOfIssues(filter='проект: {Customer Help Desk} создана: Вчера')
+        customer_helpdesk_created_yesterday = yt.getNumberOfIssues(filter='проект: {Customer Help Desk}' + f' создана: {day}')
         stat['yt'].append(customer_helpdesk_created_yesterday)
-        customer_helpdesk_vezet_created_yesterday = yt.getNumberOfIssues(filter='проект: {Customer Help Desk Vezet, vezet@ckassa.ru} создана: Вчера')
+        customer_helpdesk_vezet_created_yesterday = yt.getNumberOfIssues(filter='проект: {Customer Help Desk Vezet, vezet@ckassa.ru}' + f' создана: {day}')
         stat['yt'].append(customer_helpdesk_vezet_created_yesterday)
-        support_kassir_created_yesterday = yt.getNumberOfIssues(filter='проект: {!W Support Kassir yt-kassir@bisys.ru} создана: Вчера')
+        support_kassir_created_yesterday = yt.getNumberOfIssues(filter='проект: {!W Support Kassir yt-kassir@bisys.ru}' + f' создана: {day}')
         stat['yt'].append(support_kassir_created_yesterday)
-        support_closed_yesterday = yt.getNumberOfIssues(filter='проект: SUPPORT дата завершения: Вчера')
+        support_closed_yesterday = yt.getNumberOfIssues(filter='проект: SUPPORT' + f' дата завершения: {day}' )
         stat['yt'].append(support_closed_yesterday)
-        customer_helpdesk_closed_yesterday = yt.getNumberOfIssues(filter='проект: {Customer Help Desk} дата завершения: Вчера')
+        customer_helpdesk_closed_yesterday = yt.getNumberOfIssues(filter='проект: {Customer Help Desk}' + f' дата завершения:{day}' )
         stat['yt'].append(customer_helpdesk_closed_yesterday)
-        customer_helpdesk_vezet_closed_yesterday = yt.getNumberOfIssues(filter='проект: {Customer Help Desk Vezet, vezet@ckassa.ru} дата завершения: Вчера')
+        customer_helpdesk_vezet_closed_yesterday = yt.getNumberOfIssues(filter='проект: {Customer Help Desk Vezet, vezet@ckassa.ru}' + f' дата завершения: {day}')
         stat['yt'].append(customer_helpdesk_vezet_closed_yesterday)
-        support_kassir_closed_yesterday = yt.getNumberOfIssues(filter='проект: {!W Support Kassir yt-kassir@bisys.ru} дата завершения: Вчера')
+        support_kassir_closed_yesterday = yt.getNumberOfIssues(filter='проект: {!W Support Kassir yt-kassir@bisys.ru}' + f' дата завершения:{day}')
         stat['yt'].append(support_kassir_closed_yesterday)
         issules_waiting_summary = yt.getNumberOfIssues(filter='проект: SUPPORT , {Customer Help Desk} , {Customer Help Desk Vezet, vezet@ckassa.ru} , KASSA #Незавершенная')
         stat['yt'].append(issules_waiting_summary)
@@ -171,7 +174,7 @@ def get_answered_unanswered():
         "Authorization": "Basic c3VwcG9ydGhlbHA6cXdlcnR5",
         "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:80.0) Gecko/20100101 Firefox/80.0"
     }
-    yesterday = datetime.strftime((datetime.now() - timedelta(days=1)), "%Y-%m-%d")
+    #yesterday = datetime.strftime((datetime.now() - timedelta(days=1)), "%Y-%m-%d")
     weekday = datetime.isoweekday((datetime.now() - timedelta(days=1)))
     #logger.info(f'weekday: {weekday}')
     if weekday == 5:  # По пятнцицам смотреть звонки до 17 часов
@@ -180,8 +183,8 @@ def get_answered_unanswered():
         endtime = "17:59:59"
 
     payload = {
-        "start": f"{yesterday} 09:00:00",
-        "end": f"{yesterday} {endtime}",
+        "start": f"{day} 09:00:00",
+        "end": f"{day} {endtime}",
         "List_Queue[]": ["'100'", "'200'"],
         "List_Agent[]": ["'125-Cvecih'", "'154-Yakovlev'", "'140-Voronina'", "'137-Zmeev'", "'148-Nazarov'", "'155-Kulakov'", "'147-Besonogov'", "'147-Besogonov'", "'156-Solcina'"]
     }
@@ -224,10 +227,11 @@ def record_data():
     #  Выбираем вкладку текущего месяца
     worksheet = sh.worksheet(month)
     #  Находим столбец, где вчерашний день
-    yesterday = datetime.strftime((datetime.now() - timedelta(days=1)), "%d.%m.%Y")
-    weekday = datetime.isoweekday(datetime.now())
-    cell = worksheet.find(yesterday)
-    if weekday in [6, 7]:  # Если вчера была суббота, либо воскресение, то данные по звонкам не заполнять
+    iso_day = datetime.strptime(day, '%Y-%m-%d')  # Преобразуем введенные данные в объект datetime
+    format_day = datetime.strftime(iso_day, "%d.%m.%Y")  # Теперь объект преобразуем в удобный формат
+    weekday = datetime.isoweekday(datetime.now())  # Смотрим день недели
+    cell = worksheet.find(format_day)
+    if weekday in [6, 7]:  # Если сегодня суббота, либо воскресение, то данные по звонкам не заполнять
         try:
             #  cell.row - строка cell.col - столбец. Заполняем данные
             #  Создано support
@@ -298,13 +302,10 @@ def tg_alarm(alarmtext):
 
 #@logger.catch()
 def main():
-    if datetime.time(datetime.now()) <= time(17, 0):  # Если сейчас меньше 17 часов то данные из c2d не пишем
-        yt_stat()
-        get_answered_unanswered()
-        record_data()
-    else:  # Если вечер, то пишем только данные из чатов
-        c2d_stat()
-        record_data()
+    yt_stat()
+    get_answered_unanswered()
+    #c2d_stat()
+    record_data()
 
 
 if __name__ == '__main__':
